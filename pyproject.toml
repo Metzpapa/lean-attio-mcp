@@ -1,0 +1,27 @@
+[project]
+name = "lean-attio-mcp"
+version = "0.1.0"
+description = "A lean, purpose-built Attio CRM MCP server. 1,400 lines. No abstractions. Just tools."
+requires-python = ">=3.13"
+license = "MIT"
+authors = [
+    { name = "Sam Parks" },
+]
+keywords = ["mcp", "attio", "crm", "model-context-protocol", "claude"]
+readme = "README.md"
+dependencies = [
+    "mcp>=1.3.0",
+    "httpx>=0.27.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/samuelpa/lean-attio-mcp"
+Issues = "https://github.com/samuelpa/lean-attio-mcp/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+lean-attio-mcp = "attio_mcp:main"
+attio-mcp = "attio_mcp:main"
