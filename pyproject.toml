@@ -18,6 +18,9 @@ dependencies = [
 Homepage = "https://github.com/Metzpapa/lean-attio-mcp"
 Issues = "https://github.com/Metzpapa/lean-attio-mcp/issues"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/attio_mcp"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
