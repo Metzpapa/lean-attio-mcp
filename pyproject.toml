@@ -15,8 +15,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/samuelpa/lean-attio-mcp"
-Issues = "https://github.com/samuelpa/lean-attio-mcp/issues"
+Homepage = "https://github.com/Metzpapa/lean-attio-mcp"
+Issues = "https://github.com/Metzpapa/lean-attio-mcp/issues"
 
 [build-system]
 requires = ["hatchling"]

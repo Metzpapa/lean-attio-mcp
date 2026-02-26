@@ -29,7 +29,7 @@ This server gives AI agents clean, formatted access to Attio's full REST API. Ev
 ### Install
 
 ```bash
-git clone https://github.com/samuelpa/lean-attio-mcp.git
+git clone https://github.com/Metzpapa/lean-attio-mcp.git
 cd lean-attio-mcp
 uv sync
 ```
