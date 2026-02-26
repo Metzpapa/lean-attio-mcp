@@ -52,6 +52,20 @@ TOOLS = [
             "required": ["parent_object", "parent_record_id"],
         },
     },
+    {
+        "name": "delete_note",
+        "description": "Permanently delete a note. This is irreversible.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "note_id": {
+                    "type": "string",
+                    "description": "The note ID to delete",
+                },
+            },
+            "required": ["note_id"],
+        },
+    },
 ]
 
 
@@ -60,6 +74,8 @@ def handle(name: str, args: dict) -> str:
         return _create_note(args)
     elif name == "list_notes":
         return _list_notes(args)
+    elif name == "delete_note":
+        return _delete_note(args)
     raise ValueError(f"Unknown note tool: {name}")
 
 
@@ -99,3 +115,10 @@ def _list_notes(args: dict) -> str:
         lines.append(formatting.format_note(note))
         lines.append("")
     return "\n".join(lines)
+
+
+def _delete_note(args: dict) -> str:
+    note_id = args["note_id"]
+
+    client.delete(f"/notes/{note_id}")
+    return f"Permanently deleted note {note_id}."

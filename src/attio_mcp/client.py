@@ -57,9 +57,9 @@ def post(path: str, json: dict | None = None) -> dict:
         return _handle_response(resp)
 
 
-def put(path: str, json: dict | None = None) -> dict:
+def put(path: str, json: dict | None = None, params: dict | None = None) -> dict:
     with _client() as c:
-        resp = c.put(path, json=json or {})
+        resp = c.put(path, json=json or {}, params=params)
         return _handle_response(resp)
 
 

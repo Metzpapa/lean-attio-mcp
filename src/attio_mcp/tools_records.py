@@ -108,6 +108,24 @@ TOOLS = [
             "required": ["object", "record_id"],
         },
     },
+    {
+        "name": "delete_record",
+        "description": "Permanently delete a record (company, person, or deal). This is irreversible.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "object": {
+                    "type": "string",
+                    "description": "Object type: companies, people, deals",
+                },
+                "record_id": {
+                    "type": "string",
+                    "description": "The record ID to delete",
+                },
+            },
+            "required": ["object", "record_id"],
+        },
+    },
 ]
 
 
@@ -122,6 +140,8 @@ def handle(name: str, args: dict) -> str:
         return _update(args)
     elif name == "list_record_entries":
         return _list_entries(args)
+    elif name == "delete_record":
+        return _delete_record(args)
     raise ValueError(f"Unknown record tool: {name}")
 
 
@@ -186,9 +206,12 @@ def _create_or_update(args: dict) -> str:
         "data": {
             "values": formatted,
         },
-        "matching_attribute": matching,
     }
-    data = client.put(f"/objects/{object_type}/records", json=body)
+    data = client.put(
+        f"/objects/{object_type}/records",
+        json=body,
+        params={"matching_attribute": matching},
+    )
     record = data.get("data", data)
     record_id = record.get("id", {})
     if isinstance(record_id, dict):
@@ -243,6 +266,14 @@ def _list_entries(args: dict) -> str:
         entry_id = entry.get("entry_id", entry.get("id", ""))
         lines.append(f"  List: {list_id} — Entry ID: {entry_id}")
     return "\n".join(lines)
+
+
+def _delete_record(args: dict) -> str:
+    object_type = args["object"]
+    record_id = args["record_id"]
+
+    client.delete(f"/objects/{object_type}/records/{record_id}")
+    return f"Permanently deleted {object_type.rstrip('s')} record {record_id}."
 
 
 def _format_write_values(values: dict) -> dict:

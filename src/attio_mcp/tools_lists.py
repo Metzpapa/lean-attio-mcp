@@ -80,13 +80,18 @@ TOOLS = [
                     "type": "string",
                     "description": "The record ID to add/update in the list",
                 },
+                "parent_object": {
+                    "type": "string",
+                    "description": "Object type slug: companies, people, or deals",
+                    "default": "companies",
+                },
                 "entry_values": {
                     "type": "object",
                     "description": "Values for list-specific fields (stage, next_step, etc.)",
                     "default": {},
                 },
             },
-            "required": ["list_id", "parent_record_id"],
+            "required": ["list_id", "parent_record_id", "parent_object"],
         },
     },
     {
@@ -107,6 +112,25 @@ TOOLS = [
             "required": ["list_id", "entry_id"],
         },
     },
+    {
+        "name": "archive_list",
+        "description": "Archive a list/pipeline. Hides it from the sidebar but preserves data. Use is_archived=false to unarchive.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "list_id": {
+                    "type": "string",
+                    "description": "List ID or slug to archive",
+                },
+                "is_archived": {
+                    "type": "boolean",
+                    "description": "True to archive, false to unarchive",
+                    "default": True,
+                },
+            },
+            "required": ["list_id"],
+        },
+    },
 ]
 
 
@@ -121,6 +145,8 @@ def handle(name: str, args: dict) -> str:
         return _create_or_update_entry(args)
     elif name == "delete_entry":
         return _delete_entry(args)
+    elif name == "archive_list":
+        return _archive_list(args)
     raise ValueError(f"Unknown list tool: {name}")
 
 
@@ -237,11 +263,13 @@ def _resolve_parent_names(entries: list) -> dict[str, str]:
 def _create_or_update_entry(args: dict) -> str:
     list_id = args["list_id"]
     parent_record_id = args["parent_record_id"]
+    parent_object = args.get("parent_object", "companies")
     entry_values = args.get("entry_values", {})
 
     body = {
         "data": {
             "parent_record_id": parent_record_id,
+            "parent_object": parent_object,
             "entry_values": entry_values,
         },
     }
@@ -260,3 +288,16 @@ def _delete_entry(args: dict) -> str:
 
     client.delete(f"/lists/{list_id}/entries/{entry_id}")
     return f"Removed entry {entry_id} from list '{list_id}'."
+
+
+def _archive_list(args: dict) -> str:
+    list_id = args["list_id"]
+    is_archived = args.get("is_archived", True)
+
+    body = {"data": {"is_archived": is_archived}}
+    data = client.patch(f"/lists/{list_id}", json=body)
+    lst = data.get("data", data)
+    name = lst.get("name", list_id)
+
+    action = "Archived" if is_archived else "Unarchived"
+    return f"{action} list: {name}"

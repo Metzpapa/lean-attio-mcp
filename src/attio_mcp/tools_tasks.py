@@ -94,6 +94,20 @@ TOOLS = [
             "required": ["task_id"],
         },
     },
+    {
+        "name": "delete_task",
+        "description": "Permanently delete a task. This is irreversible.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The task ID to delete",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
 ]
 
 
@@ -104,6 +118,8 @@ def handle(name: str, args: dict) -> str:
         return _list_tasks(args)
     elif name == "update_task":
         return _update_task(args)
+    elif name == "delete_task":
+        return _delete_task(args)
     raise ValueError(f"Unknown task tool: {name}")
 
 
@@ -171,3 +187,10 @@ def _update_task(args: dict) -> str:
     content = task.get("content_plaintext", task.get("content", ""))
 
     return f"Updated task: {content[:80]}"
+
+
+def _delete_task(args: dict) -> str:
+    task_id = args["task_id"]
+
+    client.delete(f"/tasks/{task_id}")
+    return f"Permanently deleted task {task_id}."
