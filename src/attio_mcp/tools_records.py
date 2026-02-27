@@ -109,6 +109,55 @@ TOOLS = [
         },
     },
     {
+        "name": "query_records",
+        "description": "Query records with structured filters and sorting. More powerful than search_records. Supports $and, $or, $not, $contains, $starts_with, $gt, $lt, $gte, $lte, $is_empty, $not_empty.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "object": {
+                    "type": "string",
+                    "description": "Object type: companies, people, or deals",
+                },
+                "filter": {
+                    "type": "object",
+                    "description": "Attio filter object. Examples: {\"name\": {\"$contains\": \"rapid\"}}, {\"$or\": [{\"stage\": \"Meeting\"}, {\"stage\": \"Proposal\"}]}, {\"created_at\": {\"$gt\": \"2026-02-01\"}}",
+                },
+                "sorts": {
+                    "type": "array",
+                    "description": "Sort array. Example: [{\"attribute\": \"name\", \"direction\": \"asc\"}]",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results (default 20)",
+                    "default": 20,
+                },
+            },
+            "required": ["object"],
+        },
+    },
+    {
+        "name": "get_attribute_history",
+        "description": "Get the full history of a field's values on a record. Shows when values changed and what they changed to. Useful for auditing stage changes, tracking when contacts were updated, etc.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "object": {
+                    "type": "string",
+                    "description": "Object type: companies, people, or deals",
+                },
+                "record_id": {
+                    "type": "string",
+                    "description": "The record ID",
+                },
+                "attribute": {
+                    "type": "string",
+                    "description": "Attribute slug (e.g. 'name', 'stage', 'email_addresses')",
+                },
+            },
+            "required": ["object", "record_id", "attribute"],
+        },
+    },
+    {
         "name": "delete_record",
         "description": "Permanently delete a record (company, person, or deal). This is irreversible.",
         "inputSchema": {
@@ -140,6 +189,10 @@ def handle(name: str, args: dict) -> str:
         return _update(args)
     elif name == "list_record_entries":
         return _list_entries(args)
+    elif name == "query_records":
+        return _query_records(args)
+    elif name == "get_attribute_history":
+        return _get_attribute_history(args)
     elif name == "delete_record":
         return _delete_record(args)
     raise ValueError(f"Unknown record tool: {name}")
@@ -265,6 +318,57 @@ def _list_entries(args: dict) -> str:
         list_id = entry.get("list_id", "")
         entry_id = entry.get("entry_id", entry.get("id", ""))
         lines.append(f"  List: {list_id} — Entry ID: {entry_id}")
+    return "\n".join(lines)
+
+
+def _query_records(args: dict) -> str:
+    object_type = args["object"]
+    limit = args.get("limit", 20)
+
+    body = {"limit": limit}
+    if args.get("filter"):
+        body["filter"] = args["filter"]
+    if args.get("sorts"):
+        body["sorts"] = args["sorts"]
+
+    data = client.post(f"/objects/{object_type}/records/query", json=body)
+    records = data.get("data", [])
+
+    if not records:
+        return f"No {object_type} matched the query."
+
+    lines = [f"Found {len(records)} {object_type}:"]
+    for i, rec in enumerate(records, 1):
+        lines.append(f"{i}. {formatting.format_record_short(rec)}")
+    return "\n".join(lines)
+
+
+def _get_attribute_history(args: dict) -> str:
+    object_type = args["object"]
+    record_id = args["record_id"]
+    attribute = args["attribute"]
+
+    data = client.get(
+        f"/objects/{object_type}/records/{record_id}/attributes/{attribute}/values",
+        params={"show_historic": "true"},
+    )
+    values = data.get("data", [])
+
+    if not values:
+        return f"No values found for {attribute} on this record."
+
+    lines = [f"History for '{attribute}' ({len(values)} values):"]
+    for val in values:
+        active_from = val.get("active_from", "unknown")
+        active_until = val.get("active_until")
+        is_current = active_until is None
+
+        # Extract the actual value
+        raw = formatting.extract_value(val)
+
+        status = " [current]" if is_current else f" → ended {active_until}"
+        lines.append(f"  {active_from}: {raw}{status}")
+
     return "\n".join(lines)
 
 
